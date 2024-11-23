@@ -6,7 +6,7 @@
 /*   By: skaynar <skaynar@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 18:29:41 by skaynar           #+#    #+#             */
-/*   Updated: 2024/11/22 18:39:47 by skaynar          ###   ########.fr       */
+/*   Updated: 2024/11/23 15:00:44 by skaynar          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,5 @@ size_t		ft_strlen(const char *str);
 char		*ft_strchr(const char *s, int c);
 char		*ft_strjoin(char *s1, char *s2);
 char		*get_next_line(int fd);
-static char	*after(char *repo);
-static char	*before(char *repo);
-static char	*join(char *repo, char *buff, int fd);
 
 #endif
