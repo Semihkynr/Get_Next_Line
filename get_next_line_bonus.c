@@ -1,107 +1,149 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: skaynar <skaynar@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/17 14:41:01 by skaynar           #+#    #+#             */
-/*   Updated: 2024/11/22 18:40:49 by skaynar          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "get_next_line_bonus.h"
 
-static char	*before(char *repo)
+static t_lst	**get_fd_storage(t_fd **head, int fd)
 {
-	int		i;
-	char	*line;
+	t_fd	*cur;
+	t_fd	*new_node;
 
-	i = 0;
-	if (!repo[i])
+	cur = *head;
+	while (cur)
+	{
+		if (cur->fd == fd)
+			return (&cur->chunks);
+		cur = cur->next;
+	}
+	new_node = (t_fd *)malloc(sizeof(t_fd));
+	if (!new_node)
 		return (NULL);
-	while (repo[i] && repo[i] != '\n')
-		i++;
-	line = (char *)malloc(sizeof(char) * (i + 2));
+	new_node->fd = fd;
+	new_node->chunks = NULL;
+	new_node->next = *head;
+	*head = new_node;
+	return (&(*head)->chunks);
+}
+
+static int	has_newline(t_lst *lst)
+{
+	while (lst)
+	{
+		if (my_strchr(lst->str, '\n'))
+			return (1);
+		lst = lst->next;
+	}
+	return (0);
+}
+
+static size_t	line_length(t_lst *lst)
+{
+	size_t	len;
+	char	*nl;
+
+	len = 0;
+	while (lst)
+	{
+		nl = my_strchr(lst->str, '\n');
+		if (nl)
+			return (len + (size_t)(nl - lst->str) + 1);
+		len += my_strlen(lst->str);
+		lst = lst->next;
+	}
+	return (len);
+}
+
+static char	*extract_line(t_lst **lst)
+{
+	char	*line;
+	char	*nl;
+	t_lst	*next_node;
+	size_t	pos;
+	size_t	i;
+
+	line = (char *)malloc(line_length(*lst) + 1);
 	if (!line)
 		return (NULL);
-	i = 0;
-	while (repo[i] && repo[i] != '\n')
+	pos = 0;
+	while (*lst)
 	{
-		line[i] = repo[i];
-		i++;
+		nl = my_strchr((*lst)->str, '\n');
+		i = 0;
+		while ((*lst)->str[i] && (*lst)->str[i] != '\n')
+			line[pos++] = (*lst)->str[i++];
+		if (nl)
+		{
+			line[pos++] = '\n';
+			break ;
+		}
+		next_node = (*lst)->next;
+		free((*lst)->str);
+		free(*lst);
+		*lst = next_node;
 	}
-	if (repo[i] == '\n')
-	{
-		line[i] = repo[i];
-		i++;
-	}
-	line[i] = '\0';
+	line[pos] = '\0';
 	return (line);
 }
 
-static char	*after(char *repo)
+static void	shift_after_newline(t_lst **lst)
 {
-	int		i;
-	int		j;
-	char	*new_repo;
+	char	*nl;
+	char	*rest;
+	t_lst	*next_node;
+	t_lst	*new_head;
 
-	i = 0;
-	while (repo[i] && repo[i] != '\n')
-		i++;
-	if (!repo[i])
+	nl = my_strchr((*lst)->str, '\n');
+	next_node = (*lst)->next;
+	rest = my_strdup(nl + 1);
+	free((*lst)->str);
+	free(*lst);
+	if (rest && rest[0] != '\0')
 	{
-		free(repo);
-		return (NULL);
+		new_head = lst_new(rest);
+		new_head->next = next_node;
+		*lst = new_head;
 	}
-	new_repo = (char *)malloc(sizeof(char) * (ft_strlen(repo) - i + 1));
-	if (!repo)
-		return (NULL);
-	i++;
-	j = 0;
-	while (repo[i])
-		new_repo[j++] = repo[i++];
-	new_repo[j] = '\0';
-	free(repo);
-	return (new_repo);
-}
-
-static char	*join(char *repo, char *buffer, int fd)
-{
-	int	count;
-
-	count = 1;
-	while (!ft_strchr(repo, '\n') && count != 0)
+	else
 	{
-		count = read(fd, buffer, BUFFER_SIZE);
-		if (count == -1)
-		{
-			free(buffer);
-			free(repo);
-			return (NULL);
-		}
-		buffer[count] = '\0';
-		repo = ft_strjoin(repo, buffer);
+		if (rest)
+			free(rest);
+		*lst = next_node;
 	}
-	free(buffer);
-	return (repo);
 }
 
 char	*get_next_line(int fd)
 {
+	static t_fd	*fds;
+	t_lst		**storage;
+	char		*buf;
 	char		*line;
-	char		*buffer;
-	static char	*repo[1024];
+	int			rd;
 
-	if (fd < 0 || BUFFER_SIZE <= 0 || fd > 1024)
+	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
-	buffer = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
-	if (!buffer)
+	storage = get_fd_storage(&fds, fd);
+	if (!storage)
 		return (NULL);
-	repo[fd] = join(repo[fd], buffer, fd);
-	if (!repo[fd])
+	rd = 1;
+	while (!has_newline(*storage) && rd > 0)
+	{
+		buf = (char *)malloc(BUFFER_SIZE + 1);
+		if (!buf)
+			return (NULL);
+		rd = read(fd, buf, BUFFER_SIZE);
+		if (rd < 0)
+		{
+			free(buf);
+			lst_clear(storage);
+			return (NULL);
+		}
+		buf[rd] = '\0';
+		if (rd > 0)
+			lst_add_back(storage, lst_new(buf));
+		else
+			free(buf);
+	}
+	if (!*storage)
 		return (NULL);
-	line = before(repo[fd]);
-	repo[fd] = after(repo[fd]);
+	line = extract_line(storage);
+	if (*storage && my_strchr((*storage)->str, '\n'))
+		shift_after_newline(storage);
 	return (line);
 }

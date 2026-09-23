@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   get_next_line.h                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: skaynar <skaynar@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/17 14:41:13 by skaynar           #+#    #+#             */
-/*   Updated: 2024/11/23 15:00:39 by skaynar          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef GET_NEXT_LINE_H
 # define GET_NEXT_LINE_H
 
@@ -20,9 +8,18 @@
 #  define BUFFER_SIZE 100
 # endif
 
-size_t		ft_strlen(const char *str);
-char		*ft_strchr(const char *s, int c);
-char		*ft_strjoin(char *s1, char *s2);
-char		*get_next_line(int fd);
+typedef struct s_lst
+{
+	char			*str;
+	struct s_lst	*next;
+}	t_lst;
+
+size_t	my_strlen(const char *s);
+char	*my_strchr(const char *s, int c);
+char	*my_strdup(const char *s);
+t_lst	*lst_new(char *str);
+void	lst_add_back(t_lst **lst, t_lst *new_node);
+void	lst_clear(t_lst **lst);
+char	*get_next_line(int fd);
 
 #endif

@@ -1,71 +1,82 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   get_next_line_utils.c                              :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: skaynar <skaynar@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/17 14:41:06 by skaynar           #+#    #+#             */
-/*   Updated: 2024/11/22 18:37:42 by skaynar          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "get_next_line.h"
 
-size_t	ft_strlen(const char *s)
+size_t	my_strlen(const char *s)
 {
-	size_t	i;
+	size_t	len;
 
-	i = 0;
-	while (s[i])
-	{
-		i++;
-	}
-	return (i);
+	len = 0;
+	while (s[len])
+		len++;
+	return (len);
 }
 
-char	*ft_strchr(const char *s, int c)
+char	*my_strchr(const char *s, int c)
 {
-	char	i;
-
-	i = (char)c;
-	if (!s)
-		return (0);
-	if (i == '\0')
-		return ((char *)s);
-	while (*s)
+	while (s && *s)
 	{
-		if (*s == i)
+		if (*s == (char)c)
 			return ((char *)s);
 		s++;
 	}
-	return (0);
+	return (NULL);
 }
 
-char	*ft_strjoin(char *s1, char *s2)
+char	*my_strdup(const char *s)
 {
-	char	*area;
+	char	*copy;
 	size_t	i;
-	size_t	j;
 
-	if (!s1)
-	{
-		s1 = (char *)malloc(sizeof(char));
-		s1[0] = 0;
-	}
-	area = (char *)malloc(sizeof(char) * (ft_strlen(s1) + ft_strlen(s2) + 1));
-	if (!area)
+	copy = (char *)malloc(my_strlen(s) + 1);
+	if (!copy)
 		return (NULL);
 	i = 0;
-	j = 0;
-	while (s1[i] != '\0')
+	while (s[i])
 	{
-		area[i] = s1[i];
+		copy[i] = s[i];
 		i++;
 	}
-	while (s2[j] != '\0')
-		area[i++] = s2[j++];
-	area[i] = '\0';
-	free(s1);
-	return (area);
+	copy[i] = '\0';
+	return (copy);
+}
+
+t_lst	*lst_new(char *str)
+{
+	t_lst	*node;
+
+	node = (t_lst *)malloc(sizeof(t_lst));
+	if (!node)
+		return (NULL);
+	node->str = str;
+	node->next = NULL;
+	return (node);
+}
+
+void	lst_add_back(t_lst **lst, t_lst *new_node)
+{
+	t_lst	*tmp;
+
+	if (!lst || !new_node)
+		return ;
+	if (!*lst)
+	{
+		*lst = new_node;
+		return ;
+	}
+	tmp = *lst;
+	while (tmp->next)
+		tmp = tmp->next;
+	tmp->next = new_node;
+}
+
+void	lst_clear(t_lst **lst)
+{
+	t_lst	*tmp;
+
+	while (lst && *lst)
+	{
+		tmp = (*lst)->next;
+		free((*lst)->str);
+		free(*lst);
+		*lst = tmp;
+	}
 }
